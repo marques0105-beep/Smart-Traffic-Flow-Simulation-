@@ -1,4 +1,5 @@
 Smart Traffic Simulation
+-------------------------
 Projeto  para a disciplina de POO.
 
 Grupo:
@@ -6,4 +7,4 @@ Grupo:
 
 - Afonso Fabiana:
 
--Gonçalo Pardelhas: 
+- Gonçalo Pardelhas: 
