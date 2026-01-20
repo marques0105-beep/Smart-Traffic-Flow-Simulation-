@@ -48,7 +48,7 @@ public class Simulation {
     // ============================
     public void update(double dt) {
 
-        spawnVehicles(); // seguro: só executa uma vez
+        spawnVehicles();
 
         adaptiveStrategy.setWaitingCars(countWaitingCars());
 
@@ -65,15 +65,24 @@ public class Simulation {
 
             boolean mustStop = false;
 
-            // Semáforo
+            // ============================
+            //  SEMÁFORO
+            // ============================
             for (Intersection i : intersections) {
 
-                boolean approaching =
-                        v.getPosition() >= i.getPosition() - 40 &&
-                                v.getPosition() < i.getPosition();
+             
+                boolean approaching = switch (v.getAxis()) {
+                    case EAST_WEST, NORTH_SOUTH ->
+                            v.getPosition() >= i.getPosition() - 40 &&
+                                    v.getPosition() < i.getPosition();
+
+                    case WEST_EAST, SOUTH_NORTH ->
+                            v.getPosition() <= i.getPosition() + 40 &&
+                                    v.getPosition() > i.getPosition();
+                };
 
                 TrafficLight light =
-                        (v.getAxis() == Axis.NORTH_SOUTH)
+                        (v.getAxis() == Axis.NORTH_SOUTH || v.getAxis() == Axis.SOUTH_NORTH)
                                 ? i.getNsLight()
                                 : i.getEwLight();
 
@@ -82,7 +91,9 @@ public class Simulation {
                 }
             }
 
-            //  Colisão com veículo à frente
+            // ============================
+            //  COLISÃO COM VEÍCULO À FRENTE
+            // ============================
             if (vehicleAhead(v)) {
                 mustStop = true;
             }
@@ -105,7 +116,13 @@ public class Simulation {
             if (other instanceof EmergencyVehicle) continue;
             if (other.getAxis() != current.getAxis()) continue;
 
-            double distance = other.getPosition() - current.getPosition();
+
+            double distance = switch (current.getAxis()) {
+                case EAST_WEST, NORTH_SOUTH ->
+                        other.getPosition() - current.getPosition();
+                case WEST_EAST, SOUTH_NORTH ->
+                        current.getPosition() - other.getPosition();
+            };
 
             if (distance > 0 && distance < 30) {
                 return true;
@@ -123,10 +140,19 @@ public class Simulation {
 
         for (Vehicle v : road.getVehicles()) {
             for (Intersection i : intersections) {
-                if (v.getPosition() >= i.getPosition() - 40 &&
-                        v.getPosition() <= i.getPosition()) {
-                    count++;
-                }
+
+                // mesma lógica de aproximação
+                boolean waiting = switch (v.getAxis()) {
+                    case EAST_WEST, NORTH_SOUTH ->
+                            v.getPosition() >= i.getPosition() - 40 &&
+                                    v.getPosition() <= i.getPosition();
+
+                    case WEST_EAST, SOUTH_NORTH ->
+                            v.getPosition() <= i.getPosition() + 40 &&
+                                    v.getPosition() >= i.getPosition();
+                };
+
+                if (waiting) count++;
             }
         }
         return count;
@@ -141,7 +167,7 @@ public class Simulation {
         intersections.clear();
         intersections.add(new Intersection(adaptiveStrategy, 300));
 
-        vehiclesSpawned = false; // 🔄 permite novo start
+        vehiclesSpawned = false;
     }
 
     // ============================
